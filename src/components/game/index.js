@@ -1,3 +1,5 @@
 import Grid from "./grid"
+import Score from "./score"
+import Status from "./status"
 
-export { Grid }
+export { Grid, Score, Status }

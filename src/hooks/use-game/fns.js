@@ -1,15 +1,5 @@
 import { GAME_SIZE } from "../../constants"
 
-let grid = Array(GAME_SIZE)
-  .fill([])
-  .map((arr) => Array(GAME_SIZE).fill(0))
-
-let snake = [
-  { x: Math.floor(GAME_SIZE / 2), y: Math.floor(GAME_SIZE / 2) - 1 }, // head
-  { x: Math.floor(GAME_SIZE / 2), y: Math.floor(GAME_SIZE / 2) },
-  { x: Math.floor(GAME_SIZE / 2), y: Math.floor(GAME_SIZE / 2) + 1 } // tail
-]
-
 const getNextSnakePos = (snake, dir) => {
   const modifier = {
     up: { x: 0, y: -1 },
@@ -26,6 +16,7 @@ const getNextSnakePos = (snake, dir) => {
 
 const getNextFrame = (grid, snake, dir, appleEaten = false) => {
   const { x, y } = getNextSnakePos(snake, dir)
+  let nextSnake = [...snake]
   let nextCell = null
 
   if (grid[y] !== undefined && grid[y][x] !== undefined) {
@@ -39,55 +30,57 @@ const getNextFrame = (grid, snake, dir, appleEaten = false) => {
       return {
         appleEaten: false,
         collision: true,
-        grid,
-        snake
+        nextGrid: grid,
+        nextSnake
       }
     case null: // wall
       return {
         appleEaten: false,
         collision: true,
-        grid,
-        snake
+        nextGrid: grid,
+        nextSnake
       }
     default:
-      snake = snake.map((_, idx) =>
+      nextSnake = snake.map((_, idx) =>
         snake[idx - 1] !== undefined ? snake[idx - 1] : { x, y }
       )
 
       return {
         appleEaten,
         collision: false,
-        grid: drawSnake(snake, grid),
-        snake
+        nextGrid: drawSnake(snake, nextSnake, grid),
+        nextSnake
       }
   }
 }
 
-const drawSnake = (snake, grid) => {
-  let gridClone = grid.map((a) => a.slice())
+const drawSnake = (prevSnake, nextSnake, grid) => {
+  let abandonedCell = prevSnake.filter((l) => !nextSnake.includes(l))
 
-  snake.forEach(({ x, y }) => {
-    gridClone[y][x] = 1
+  nextSnake.forEach(({ x, y }) => {
+    grid[y][x] = 1
   })
 
-  return gridClone
+  // the snake will no longer occupy a cell every time it moves
+  // so it must be reset
+  grid[abandonedCell[0].y][abandonedCell[0].x] = 0
+
+  return grid
 }
 
 // I think recursion is probably a poor strategy here, as the snake
 // grows, so does the probability of generating an apple cell that is occupied
 const drawApple = (grid) => {
-  let gridClone = grid.map((a) => a.slice())
-
   const rand = (min, max) => Math.floor(Math.random() * (max - min) + min)
-  const nextApplePos = { x: rand(0, GAME_SIZE), y: rand(0, GAME_SIZE) }
-  let nextCell = gridClone[nextApplePos.y][nextApplePos.x]
+  const nextApplePos = { x: rand(0, GAME_SIZE - 1), y: rand(0, GAME_SIZE - 1) }
 
   // occupied by snake
-  if (nextCell === 1) return drawApple(gridClone)
+  if (grid[nextApplePos.y][nextApplePos.x] === 1) return drawApple(grid)
   else {
-    nextCell = 2
-    return gridClone
+    grid[nextApplePos.y][nextApplePos.x] = 2
+
+    return grid
   }
 }
 
-export { grid, snake, getNextFrame, getNextSnakePos, drawSnake, drawApple }
+export { getNextFrame, getNextSnakePos, drawSnake, drawApple }

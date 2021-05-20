@@ -9,7 +9,9 @@ const App = () => (
       <div>
         <header>Snake Game</header>
         <>
+          <Game.Score />
           <Game.Grid size={GAME_SIZE} />
+          <Game.Status />
         </>
       </div>
     </S.GameWrapper>
