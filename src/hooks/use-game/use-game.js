@@ -90,7 +90,7 @@ const useGame = () => {
       }
 
       setGame((s) => ({ ...s, grid: nextGrid, snake: nextSnake }))
-    }, 50)
+    }, 75)
 
     return () => clearInterval(tick)
   }, [game.score, game.grid, game.snake, game.dir, paused, gameOver])
