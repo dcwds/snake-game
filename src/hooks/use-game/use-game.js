@@ -55,6 +55,7 @@ const useGame = () => {
 
   useEffect(() => {
     const tick = setInterval(() => {
+      console.log(game.score)
       if (paused || gameOver) return clearInterval(tick)
 
       let { appleEaten, collision, nextGrid, nextSnake } = getNextFrame(
