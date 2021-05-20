@@ -34,10 +34,8 @@ const keyMap = {
 }
 
 const useGame = () => {
-  const [direction, setDirection] = useState(initialState.dir)
-  const [score, setScore] = useState(initialState.score)
-  const [snake, setSnake] = useState(initialState.snake)
-  const [grid, setGrid] = useState(initialState.grid)
+  const [game, setGame] = useState(initialState)
+  const [paused, setPaused] = useState(true)
   const [gameOver, setGameOver] = useState(false)
 
   let firstTick = useRef(true)
@@ -46,20 +44,23 @@ const useGame = () => {
     const setDirectionOnKeyDown = (e) => {
       const key = keyMap[e.key.replace(/arrow/i, "").toLowerCase()] || ""
 
-      if (!!key && direction !== key.opposite) setDirection(key.dir)
+      if (!!key && game.dir !== key.opposite)
+        setGame((s) => ({ ...s, dir: key.dir }))
     }
 
     window.addEventListener("keydown", setDirectionOnKeyDown, false)
 
     return () => window.removeEventListener("keydown", setDirectionOnKeyDown)
-  }, [direction])
+  }, [game.dir])
 
   useEffect(() => {
     const tick = setInterval(() => {
+      if (paused || gameOver) return clearInterval(tick)
+
       let { appleEaten, collision, nextGrid, nextSnake } = getNextFrame(
-        grid.map((a) => [...a]),
-        snake,
-        direction
+        game.grid.map((a) => [...a]),
+        game.snake,
+        game.dir
       )
 
       if (firstTick.current) {
@@ -69,22 +70,32 @@ const useGame = () => {
 
       if (appleEaten) {
         nextGrid = drawApple(nextGrid)
-        setScore(score + 1)
+        setGame((s) => ({ ...s, score: game.score++ }))
       }
 
       if (collision) {
         setGameOver(true)
+
+        // UX consideration, as immediate reset of state
+        // can feel quite jarring when collision occurs, ending the game.
+        setTimeout(() => {
+          setGameOver(false)
+          setPaused(true)
+          setGame(initialState)
+        }, 1000)
+
+        firstTick.current = true
+
         return clearInterval(tick)
       }
 
-      setGrid(nextGrid)
-      setSnake(nextSnake)
+      setGame((s) => ({ ...s, grid: nextGrid, snake: nextSnake }))
     }, 50)
 
     return () => clearInterval(tick)
-  }, [score, grid, snake, direction, firstTick])
+  }, [game.score, game.grid, game.snake, game.dir, paused, gameOver])
 
-  return { score, direction, grid, gameOver }
+  return { ...game, gameOver, paused, setPaused }
 }
 
 export default useGame
